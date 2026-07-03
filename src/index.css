@@ -1,0 +1,169 @@
+/* Premium stylesheet – Tailwind CSS v4 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+@import "tailwindcss";
+
+/* ─── Theme tokens (Tailwind v4 replaces tailwind.config.js) ─── */
+@theme {
+  --color-neon-cyan: #06b6d4;
+  --color-neon-purple: #a855f7;
+  --color-neon-blue: #3b82f6;
+  --color-neon-emerald: #10b981;
+  --color-neon-amber: #f59e0b;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif-invoice: 'Playfair Display', Georgia, serif;
+  --font-heading: 'Outfit', sans-serif;
+}
+
+/* ─── CSS Variables ─── */
+:root {
+  --primary-cyber: #ffffff;
+  --bg-gradient: none;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --border-color: #e0e0e0;
+  --card-bg: #ffffff;
+  --input-bg: #f9f9f9;
+  --input-border: #cccccc;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --sidebar-border: #e0e0e0;
+  --header-bg: #ffffff;
+  --chart-line: #888888;
+  color-scheme: light;
+}
+
+/* ─── Premium Glassmorphic Cards ─── */
+.card-glass-dark {
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 20px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-glass-dark:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.4), 0 0 30px -5px rgba(6, 182, 212, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Neon Focus Inputs ─── */
+.input-premium {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+  backdrop-filter: blur(4px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.input-premium:focus {
+  border-color: var(--color-neon-cyan);
+  box-shadow: 0 0 0 3.5px rgba(6, 182, 212, 0.12), 0 0 20px 0 rgba(6, 182, 212, 0.2);
+}
+
+.input-premium:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.label-premium {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+/* ─── Premium 3D Buttons ─── */
+.btn-neon-cyan {
+  background: linear-gradient(135deg, #0891b2 0%, #0284c7 100%);
+  color: #ffffff;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-neon-cyan::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: all 0.5s ease;
+}
+
+.btn-neon-cyan:hover::before {
+  left: 100%;
+}
+
+.btn-neon-cyan:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.45), 0 0 15px rgba(6, 182, 212, 0.3);
+}
+
+.btn-neon-cyan:active {
+  transform: translateY(0px);
+}
+
+/* ─── Custom premium scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(250, 250, 250, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+
+/* ─── Base body styling ─── */
+body {
+  background: var(--primary-cyber);
+  background-image: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.font-serif-invoice {
+  font-family: var(--font-serif-invoice);
+}
+
+/* ─── Print utilities ─── */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
