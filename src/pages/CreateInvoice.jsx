@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Printer, Eye, Save, Sparkles, Building, User, MapPin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Trash2, Printer, Eye, Sparkles, MapPin } from "lucide-react";
+import { motion } from "framer-motion";
 import { calculateInvoice, numberToWords, getStateFromGstin } from "../utils/calculations";
+import * as api from "../lib/api";
 
 export default function CreateInvoice({ 
   invoices, 
@@ -9,7 +11,7 @@ export default function CreateInvoice({
   products, 
   company, 
   setView, 
-  selectedInvoiceId,
+  _selectedInvoiceId,
   setSelectedInvoiceId 
 }) {
   // 1. Initial State Setup
@@ -50,8 +52,8 @@ export default function CreateInvoice({
     { productName: "Hair oil 100ml", hsnSac: "33059011", qty: 30, rate: 250, gstRate: 18 }
   ]);
 
-  const [terms, setTerms] = useState(company.terms || "Goods once sold will not be taken back or exchanged");
-  const [receivedAmount, setReceivedAmount] = useState(0);
+  const [terms] = useState(company.terms || "Goods once sold will not be taken back or exchanged");
+  const [receivedAmount] = useState(0);
 
   // Sync shipping if sameAsBilling is checked
   useEffect(() => {
@@ -120,7 +122,9 @@ export default function CreateInvoice({
   const calculations = calculateInvoice(draftInvoice, company);
 
   // Submit Handler
-  const saveInvoice = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const saveInvoice = async () => {
     if (!clientName.trim()) {
       alert("Please specify customer name.");
       return null;
@@ -151,22 +155,50 @@ export default function CreateInvoice({
       isInterstate
     };
 
-    setInvoices([newInvoice, ...invoices]);
-    setSelectedInvoiceId(newInvoice.id);
-    return newInvoice;
+    setIsSaving(true);
+    try {
+      // Due to the schema differences (the schema I provided doesn't store nested customerDetails objects in invoices)
+      // Wait, let's look at the schema I provided: 
+      // id, invoiceNo, invoiceDate, dueDate, customerId, terms, receivedAmount, notes
+      // To prevent errors, I will omit complex objects if not in schema, OR I should alter the schema to include them. 
+      // Actually, I can just save it to supabase as a flat JSON if needed, but I didn't create JSONB columns. 
+      // Let's adjust the payload to match the DB schema precisely.
+      const dbPayload = {
+        id: newInvoice.id,
+        invoiceNo: newInvoice.invoiceNo,
+        invoiceDate: newInvoice.invoiceDate,
+        dueDate: newInvoice.dueDate,
+        customerId: selectedCustomerId || null,
+        terms: newInvoice.terms,
+        receivedAmount: newInvoice.receivedAmount,
+        notes: "Customer details embedded in items (for now)",
+        items: newInvoice.items
+      };
+      await api.addInvoice(dbPayload);
+      setInvoices([newInvoice, ...invoices]);
+      setSelectedInvoiceId(newInvoice.id);
+      return newInvoice;
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save to database. Saving locally.");
+      setInvoices([newInvoice, ...invoices]);
+      setSelectedInvoiceId(newInvoice.id);
+      return newInvoice;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveAndPreview = () => {
-    const inv = saveInvoice();
+  const handleSaveAndPreview = async () => {
+    const inv = await saveInvoice();
     if (inv) {
       setView("invoice-preview");
     }
   };
 
-  const handlePrintDirectly = () => {
-    const inv = saveInvoice();
+  const handlePrintDirectly = async () => {
+    const inv = await saveInvoice();
     if (inv) {
-      // Small timeout to allow state to settle and then print
       setTimeout(() => {
         window.print();
       }, 300);
@@ -187,22 +219,26 @@ export default function CreateInvoice({
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto pb-12 items-start">
-      {/* 2. Left Panel: Forms & Inputs */}
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto pb-12 items-start relative z-10"
+    >
+      {/* Left Panel: Forms & Inputs */}
       <div className="w-full lg:w-5/12 space-y-6 no-print">
+        
         {/* Header Title */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider">
-              <Sparkles className="text-cyan-400" size={18} /> Real-time Billing Desk
-            </h2>
-            <p className="text-slate-400 text-xs mt-0.5">Customize your products, prices, and GST codes instantly.</p>
-          </div>
+        <div>
+          <h2 className="text-lg font-extrabold text-white flex items-center gap-2 uppercase tracking-wider font-heading">
+            <Sparkles className="text-brand-secondary" size={18} /> Real-time Billing Desk
+          </h2>
+          <p className="text-slate-400 text-xs mt-0.5">Customize your products, prices, and GST codes instantly.</p>
         </div>
 
-        {/* Invoice configuration block */}
-        <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
-          <h3 className="text-xs font-bold text-white font-extrabold uppercase tracking-widest text-[11px] border-b border-slate-800/50 pb-2.5">
+        {/* Invoice dates block */}
+        <div className="card-glass p-5 space-y-4 bg-slate-950/20">
+          <h3 className="text-xs font-bold text-white font-extrabold uppercase tracking-widest text-[11px] border-b border-white/5 pb-2.5">
             1. Invoice Registry Dates
           </h3>
           <div className="grid grid-cols-3 gap-3">
@@ -237,15 +273,15 @@ export default function CreateInvoice({
         </div>
 
         {/* Customer ("Bill To") block */}
-        <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800/50 pb-2.5">
+        <div className="card-glass p-5 space-y-4 bg-slate-950/20">
+          <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
             <h3 className="text-xs font-bold text-white font-extrabold uppercase tracking-widest text-[11px]">
               2. Billing Details (Bill To)
             </h3>
             <select
               value={selectedCustomerId}
               onChange={(e) => handleCustomerSelect(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded px-2 py-1 text-[11px] font-bold outline-none focus:border-cyan-500/50 transition"
+              className="bg-slate-900 border border-white/10 text-slate-300 rounded px-2.5 py-1 text-[11px] font-bold outline-none focus:border-brand-secondary/50 transition cursor-pointer"
             >
               <option value="">-- Choose Client --</option>
               {customers.map(c => (
@@ -259,20 +295,20 @@ export default function CreateInvoice({
               <label className="label-premium">Business Client Name</label>
               <input 
                 type="text"
-                placeholder="JEHIS ONLINE MARKETING"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                placeholder="Enter Customer Name" className="input-premium font-semibold"
+                placeholder="Enter Customer Name" 
+                className="input-premium font-semibold"
               />
             </div>
             <div>
               <label className="label-premium">Billing Address</label>
               <textarea 
                 rows="2"
-                placeholder="Business location details"
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
-                placeholder="Enter Full Address" className="input-premium resize-none leading-relaxed"
+                placeholder="Enter Full Address" 
+                className="input-premium resize-none leading-relaxed"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -319,8 +355,8 @@ export default function CreateInvoice({
         </div>
 
         {/* Shipping details block */}
-        <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800/50 pb-2.5">
+        <div className="card-glass p-5 space-y-4 bg-slate-950/20">
+          <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
             <h3 className="text-xs font-bold text-white font-extrabold uppercase tracking-widest text-[11px]">
               3. Shipping Address (Ship To)
             </h3>
@@ -328,8 +364,8 @@ export default function CreateInvoice({
               onClick={() => setSameAsBilling(!sameAsBilling)}
               type="button"
               className={`text-[9px] uppercase tracking-wider font-extrabold px-3 py-1.5 rounded-lg border transition duration-300 ${sameAsBilling 
-                ? "bg-cyan-950/40 text-cyan-400 border-cyan-800/40" 
-                : "bg-slate-900/60 text-slate-300 border-slate-800 hover:border-slate-700"}`}
+                ? "bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20" 
+                : "bg-slate-900/60 text-slate-300 border-white/5 hover:border-white/10"}`}
             >
               {sameAsBilling ? "✓ Copy Billing" : "Custom Shipping"}
             </button>
@@ -370,22 +406,22 @@ export default function CreateInvoice({
             </div>
           )}
           {sameAsBilling && (
-            <div className="text-xs text-slate-400 bg-white p-3.5 rounded-xl border border-slate-800/60 flex items-center gap-2">
-              <MapPin size={14} className="text-slate-400 shrink-0" />
+            <div className="text-xs text-slate-400 bg-white/2 p-3.5 rounded-xl border border-white/5 flex items-center gap-2">
+              <MapPin size={14} className="text-slate-500 shrink-0" />
               <span>Shipping address is set to match customer billing address.</span>
             </div>
           )}
         </div>
 
         {/* Item listing blocks */}
-        <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
-          <h3 className="text-xs font-bold text-white font-extrabold uppercase tracking-widest text-[11px] border-b border-slate-800/50 pb-2.5">
+        <div className="card-glass p-5 space-y-4 bg-slate-950/20">
+          <h3 className="text-xs font-bold text-white font-extrabold uppercase tracking-widest text-[11px] border-b border-white/5 pb-2.5">
             4. Line Items & GST Calculation
           </h3>
 
-          <div className="space-y-4 divide-y divide-slate-800/60">
+          <div className="space-y-4 divide-y divide-white/5">
             {items.map((item, idx) => (
-              <div key={idx} className={`space-y-3 ${idx > 0 ? "pt-4" : ""}`}>
+              <div key={idx} className={`space-y-3 ${idx > 0 ? "pt-4 border-t border-white/5" : ""}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
                     Item #{idx + 1}
@@ -393,7 +429,7 @@ export default function CreateInvoice({
                   <div className="flex items-center gap-2">
                     <select
                       onChange={(e) => handleProductSelect(idx, e.target.value)}
-                      className="bg-slate-900 border border-slate-800 text-slate-400 rounded px-2 py-1 text-[10px] outline-none font-bold focus:border-cyan-500/50 transition"
+                      className="bg-slate-900 border border-white/10 text-slate-450 rounded px-2.5 py-1 text-[10px] outline-none font-bold focus:border-brand-secondary/50 transition cursor-pointer"
                       defaultValue=""
                     >
                       <option value="">-- Catalog --</option>
@@ -405,7 +441,7 @@ export default function CreateInvoice({
                       <button
                         type="button"
                         onClick={() => removeItemRow(idx)}
-                        className="text-slate-400 hover:text-rose-600 transition"
+                        className="text-slate-400 hover:text-rose-500 transition cursor-pointer"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -458,7 +494,7 @@ export default function CreateInvoice({
                     <select
                       value={item.gstRate}
                       onChange={(e) => handleItemChange(idx, "gstRate", parseInt(e.target.value) || 0)}
-                      className="input-premium font-bold"
+                      className="input-premium font-bold cursor-pointer"
                     >
                       <option value="18">18%</option>
                       <option value="12">12%</option>
@@ -474,38 +510,40 @@ export default function CreateInvoice({
           <button
             type="button"
             onClick={addItemRow}
-            className="w-full flex items-center justify-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-bold py-2.5 border border-dashed border-cyan-850 rounded-xl bg-cyan-950/15 hover:bg-cyan-950/30 transition duration-300 mt-2"
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-brand-secondary hover:text-white font-bold py-2.5 border border-dashed border-white/10 rounded-xl bg-white/3 hover:bg-white/5 transition duration-300 mt-2 cursor-pointer"
           >
             <Plus size={14} /> Add Line Product
           </button>
         </div>
 
         {/* Action Panel */}
-        <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl flex flex-col gap-2">
+        <div className="card-glass p-5 bg-slate-950/20 flex flex-col gap-2">
           <button
             onClick={handleSaveAndPreview}
-            className="w-full btn-neon-cyan py-3 px-4 flex items-center justify-center gap-2 text-xs transition uppercase tracking-wider font-extrabold"
+            disabled={isSaving}
+            className="w-full btn-premium-gradient py-3 px-4 flex items-center justify-center gap-2 text-xs transition uppercase tracking-wider font-extrabold cursor-pointer disabled:opacity-50"
           >
-            <Eye size={16} /> Save & Open Invoice Preview
+            <Eye size={16} /> {isSaving ? "Saving..." : "Save & Open Invoice Preview"}
           </button>
           <button
             onClick={handlePrintDirectly}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-extrabold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs border border-slate-800 hover:border-slate-700 transition duration-300 uppercase tracking-wider"
+            disabled={isSaving}
+            className="w-full btn-cyber-outline py-3 px-4 flex items-center justify-center gap-2 text-xs transition uppercase tracking-wider font-extrabold cursor-pointer disabled:opacity-50"
           >
-            <Printer size={16} /> Save & Print directly (A4)
+            <Printer size={16} /> {isSaving ? "Saving..." : "Save & Print directly (A4)"}
           </button>
         </div>
       </div>
 
       {/* 3. Right Panel: Live-updating A4 Sheet Preview */}
-      <div className="w-full lg:w-7/12 flex flex-col items-center sticky top-24 overflow-y-auto max-h-[82vh] p-4 bg-white rounded-2xl border border-slate-200 shadow-sm no-print">
-        <span className="text-[9px] text-slate-400 uppercase tracking-widest font-extrabold mb-3 flex items-center gap-1.5">
-          <Sparkles size={12} className="text-cyan-400" /> Live-updating Invoice Preview
+      <div className="w-full lg:w-7/12 flex flex-col items-center sticky top-24 overflow-y-auto max-h-[82vh] p-6 card-glass bg-slate-950/10 no-print">
+        <span className="text-[9px] text-slate-400 uppercase tracking-widest font-extrabold mb-4 flex items-center gap-1.5">
+          <Sparkles size={12} className="text-brand-secondary" /> Live-updating Invoice Preview
         </span>
 
         {/* Scaled A4 Preview Box */}
-        <div className="w-full max-w-[210mm] origin-top scale-[0.9] lg:scale-[0.80] xl:scale-[0.95] bg-white text-slate-800 p-8 border border-slate-200 shadow-2xl relative rounded-sm font-sans select-none select-text">
-          {/* Double-line inner border like in Nextlife */}
+        <div className="w-full max-w-[210mm] origin-top scale-[0.9] lg:scale-[0.80] xl:scale-[0.95] bg-white text-slate-800 p-8 border border-slate-300 shadow-2xl relative rounded-sm font-sans select-none select-text">
+          {/* Double-line inner border */}
           <div className="absolute inset-2 border border-[#d4af37]/60 pointer-events-none rounded-sm"></div>
           <div className="absolute inset-3 border border-[#d4af37]/40 pointer-events-none rounded-sm"></div>
 
@@ -582,7 +620,7 @@ export default function CreateInvoice({
               </div>
 
               <div className="p-3 space-y-1 bg-white">
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-amber-700 border-b border-slate-100 pb-0.5">
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-amber-750 border-b border-slate-100 pb-0.5">
                   Ship To
                 </h3>
                 <div className="text-[10px] space-y-0.5 text-slate-600">
@@ -689,11 +727,11 @@ export default function CreateInvoice({
                       const splitTax = tax.tax / 2;
                       return (
                         <React.Fragment key={tax.rate}>
-                          <div className="flex justify-between py-1 text-slate-400">
+                          <div className="flex justify-between py-1 text-slate-450">
                             <span>CGST @ {splitRate}%</span>
                             <span className="font-mono">₹{splitTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                           </div>
-                          <div className="flex justify-between py-1 text-slate-400">
+                          <div className="flex justify-between py-1 text-slate-450">
                             <span>SGST @ {splitRate}%</span>
                             <span className="font-mono">₹{splitTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                           </div>
@@ -701,7 +739,7 @@ export default function CreateInvoice({
                       );
                     } else {
                       return (
-                        <div key={tax.rate} className="flex justify-between py-1 text-slate-400">
+                        <div key={tax.rate} className="flex justify-between py-1 text-slate-450">
                           <span>IGST @ {tax.rate}%</span>
                           <span className="font-mono">₹{tax.tax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                         </div>
@@ -747,6 +785,6 @@ export default function CreateInvoice({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

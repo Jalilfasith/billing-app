@@ -3,13 +3,6 @@ import React from "react";
 
 /**
  * GlassCard – a reusable container with premium glass‑morphism styling.
- *
- * Props:
- *   - children: React nodes to render inside the card.
- *   - className?: additional Tailwind classes (optional).
- *   - style?: inline style object (optional).
- *   - title?: optional header text; if provided a header bar is rendered.
- *   - footer?: optional footer node rendered at the bottom.
  */
 export default function GlassCard({
   children,
@@ -21,22 +14,24 @@ export default function GlassCard({
   return (
     <div
       className={`
-        backdrop-blur-xl bg-white/5 border border-white/10 
-        rounded-xl shadow-[0_4px_30px_rgba(0,0,0,0.12)] 
-        flex flex-col overflow-hidden 
+        card-glass flex flex-col overflow-hidden 
         ${className}
       `}
       style={style}
     >
       {title && (
-        <div className="px-4 py-2 bg-white/10 border-b border-white/15 text-sm font-medium text-white/80">
+        <div className="px-5 py-3.5 bg-white/3 border-b border-white/5 text-sm font-bold text-white uppercase tracking-wider">
           {title}
         </div>
       )}
-      <div className="p-4 flex-1 text-white/90">
+      <div className="p-5 flex-1 text-slate-200">
         {children}
       </div>
-      {footer && <div className="px-4 py-2 border-t border-white/15 bg-white/5">{footer}</div>}
+      {footer && (
+        <div className="px-5 py-3 border-t border-white/5 bg-white/1">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

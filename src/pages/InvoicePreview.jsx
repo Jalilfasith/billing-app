@@ -1,11 +1,12 @@
-import React, { useRef } from "react";
-import { Printer, Edit2, ArrowLeft, ShieldCheck, Mail, Phone, Landmark } from "lucide-react";
-import { calculateInvoice, numberToWords, getStateFromGstin } from "../utils/calculations";
+import React from "react";
+import { Printer, ArrowLeft, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { calculateInvoice, numberToWords } from "../utils/calculations";
 
 export default function InvoicePreview({ 
   invoices, 
-  customers, 
-  products, 
+  _customers, 
+  _products, 
   company, 
   setView, 
   selectedInvoiceId 
@@ -14,11 +15,11 @@ export default function InvoicePreview({
 
   if (!invoice) {
     return (
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-center max-w-md mx-auto mt-12">
-        <p className="text-slate-500 font-medium">No invoice selected.</p>
+      <div className="card-glass p-8 text-center max-w-md mx-auto mt-12 bg-slate-950/20">
+        <p className="text-slate-400 font-medium">No invoice selected.</p>
         <button 
           onClick={() => setView("history")} 
-          className="mt-4 bg-slate-900 hover:bg-slate-850 text-white font-bold px-4 py-2 rounded-lg text-xs transition"
+          className="mt-4 btn-premium-gradient font-bold px-5 py-2.5 rounded-xl text-xs transition cursor-pointer"
         >
           View Invoice History
         </button>
@@ -54,38 +55,43 @@ export default function InvoicePreview({
   );
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6 max-w-4xl mx-auto pb-12 relative z-10"
+    >
       {/* Floating Action Menu - Hidden during prints */}
-      <div className="flex flex-wrap items-center justify-between gap-3 no-print bg-slate-900 text-white p-4 rounded-xl shadow-md border border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 no-print card-glass bg-slate-950/20 p-4 border border-white/10 rounded-2xl">
         <button 
           onClick={() => setView("history")} 
-          className="flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white transition"
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-350 hover:text-white transition cursor-pointer"
         >
           <ArrowLeft size={14} /> Back to History
         </button>
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setView("create-invoice")} 
-            className="bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 font-extrabold hover:text-white px-4 py-2 rounded-xl text-xs transition duration-300 uppercase tracking-wider"
+            className="btn-cyber-outline hover:text-white px-5 py-2.5 text-xs font-extrabold transition cursor-pointer"
           >
             Edit Data
           </button>
           <button 
             onClick={handlePrint}
-            className="btn-neon-cyan px-5 py-2.5 text-xs flex items-center gap-2 tracking-wider font-extrabold uppercase"
+            className="btn-premium-gradient px-6 py-2.5 text-xs flex items-center gap-2 tracking-wider font-extrabold uppercase cursor-pointer"
           >
-            <Printer size={16} /> Print Invoices (A4 PDF)
+            <Printer size={16} /> Print Invoice (A4 PDF)
           </button>
         </div>
       </div>
 
       {/* A4 Sheet Container */}
-      <div className="flex justify-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm no-print overflow-x-auto">
+      <div className="flex justify-center card-glass bg-slate-950/10 p-6 no-print overflow-x-auto">
         <div 
-          className="bg-white text-slate-800 p-12 border border-slate-350 shadow-lg relative print-container font-sans select-none select-text shrink-0"
+          className="bg-white text-slate-800 p-12 border border-slate-350 shadow-lg print-container font-sans select-none select-text shrink-0"
           style={{ width: "210mm", height: "297mm", boxSizing: "border-box" }}
         >
-          {/* Double-line inner border like in Nextlife */}
+          {/* Double-line inner border */}
           <div className="absolute inset-4 border border-[#d4af37]/60 pointer-events-none rounded-sm"></div>
           <div className="absolute inset-5 border border-[#d4af37]/40 pointer-events-none rounded-sm"></div>
 
@@ -96,7 +102,7 @@ export default function InvoicePreview({
           <GoldCorner className="bottom-6 right-6 rotate-180" />
 
           {/* Core Content Box with absolute placement offsets */}
-          <div className="relative z-10 p-6 space-y-6 h-full flex flex-col justify-between">
+          <div className="relative z-10 p-6 h-full flex flex-col justify-between">
             <div className="space-y-6">
               
               {/* BRAND HEADER SECTION */}
@@ -118,7 +124,7 @@ export default function InvoicePreview({
                     <h1 className="text-2xl font-extrabold text-slate-950 tracking-tight leading-none font-serif-invoice uppercase">
                       {company.name}
                     </h1>
-                    <div className="text-[10px] text-slate-500 space-y-0.5 pt-2 leading-relaxed font-medium">
+                    <div className="text-[10px] text-slate-505 space-y-0.5 pt-2 leading-relaxed font-medium">
                       <p className="font-bold text-slate-800">GSTIN: {company.gstin}</p>
                       <p className="whitespace-pre-line text-slate-600 leading-normal">{company.address}</p>
                     </div>
@@ -131,7 +137,7 @@ export default function InvoicePreview({
                       TAX INVOICE
                     </h2>
                   </div>
-                  <div className="border border-slate-300 px-4 py-0.5 mt-1 bg-white text-[8px] font-bold text-slate-400 rounded-sm">
+                  <div className="border border-slate-300 px-4 py-0.5 mt-1 bg-white text-[8px] font-bold text-slate-450 rounded-sm">
                     ORIGINAL
                   </div>
                 </div>
@@ -159,7 +165,7 @@ export default function InvoicePreview({
                   <h3 className="text-[10px] font-bold uppercase tracking-wider text-[#b48d2d] border-b border-slate-100 pb-0.5">
                     Bill To
                   </h3>
-                  <div className="text-[10.5px] space-y-0.5 text-slate-600">
+                  <div className="text-[10.5px] space-y-0.5 text-slate-605">
                     <h4 className="font-black text-slate-900 text-[11px] leading-tight">{custDetails.name}</h4>
                     <p className="whitespace-pre-line text-[9px] leading-normal">{custDetails.address}</p>
                     {custDetails.phone && <p><span className="text-slate-400">Mobile:</span> {custDetails.phone}</p>}
@@ -173,7 +179,7 @@ export default function InvoicePreview({
                   <h3 className="text-[10px] font-bold uppercase tracking-wider text-[#b48d2d] border-b border-slate-100 pb-0.5">
                     Ship To
                   </h3>
-                  <div className="text-[10.5px] space-y-0.5 text-slate-600">
+                  <div className="text-[10.5px] space-y-0.5 text-slate-605">
                     <h4 className="font-black text-slate-900 text-[11px] leading-tight">{shipDetails.name || custDetails.name}</h4>
                     <p className="whitespace-pre-line text-[9px] leading-normal">{shipDetails.address || custDetails.address}</p>
                     <p><span className="text-slate-400">Destination State:</span> {shipDetails.placeOfSupply || custDetails.placeOfSupply}</p>
@@ -207,7 +213,7 @@ export default function InvoicePreview({
                           <span className="block font-bold">₹{item.taxAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                           <span className="text-[8.5px] text-slate-400">({item.gstRate}%)</span>
                         </td>
-                        <td className="px-3 py-2 text-right font-mono font-bold text-slate-900 font-bold">₹{item.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                        <td className="px-3 py-2 text-right font-mono text-slate-900 font-bold">₹{item.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
                       </tr>
                     ))}
 
@@ -233,11 +239,11 @@ export default function InvoicePreview({
               <div className="grid grid-cols-2 gap-6 items-start pt-1">
                 <div className="space-y-3">
                   <div className="text-[9.5px] text-slate-500 leading-relaxed bg-white p-3.5 rounded-sm border border-slate-200">
-                    <h4 className="font-bold text-slate-850 uppercase tracking-wider mb-0.5">Terms & Conditions</h4>
+                    <h4 className="font-bold text-slate-800 uppercase tracking-wider mb-0.5">Terms & Conditions</h4>
                     <p className="whitespace-pre-line leading-normal">{invoice.terms}</p>
                   </div>
-                  <div className="text-[9.5px] text-slate-500 leading-relaxed bg-white p-3.5 rounded-sm border border-slate-200">
-                    <h4 className="font-bold text-slate-850 uppercase tracking-wider mb-0.5">Settlement Bank details</h4>
+                  <div className="text-[9.5px] text-slate-505 leading-relaxed bg-white p-3.5 rounded-sm border border-slate-200">
+                    <h4 className="font-bold text-slate-800 uppercase tracking-wider mb-0.5">Settlement Bank details</h4>
                     <p className="leading-tight text-slate-600">
                       Account: <span className="font-semibold text-slate-800 font-mono">{company.bankAccountNo}</span><br />
                       Bank Name: <span className="font-semibold text-slate-800">{company.bankName}</span><br />
@@ -258,7 +264,7 @@ export default function InvoicePreview({
                         <div>
                           <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">UPI Settlement Address</span>
                           <span className="font-mono font-bold text-slate-800 text-[9.5px] leading-tight block">{company.upiId || "—"}</span>
-                          <span className="block text-[7px] text-slate-500 mt-1 leading-none">Scan code with any UPI app to settle payment</span>
+                          <span className="block text-[7px] text-slate-550 mt-1 leading-none">Scan code with any UPI app to settle payment</span>
                         </div>
                       </div>
                     )}
@@ -315,7 +321,7 @@ export default function InvoicePreview({
 
             {/* AUTHORIZED SIGNATORY BLOCK */}
             <div className="flex justify-between items-end">
-              <div className="flex items-center gap-2.5 text-emerald-700/80 px-3 py-1.5 border border-emerald-100 bg-emerald-50/20 rounded-md">
+              <div className="flex items-center gap-2.5 text-emerald-800/80 px-3 py-1.5 border border-emerald-100 bg-emerald-50/20 rounded-md">
                 <ShieldCheck size={16} />
                 <span className="text-[9px] font-bold uppercase tracking-wider">Digitally Verified GST Invoice</span>
               </div>
@@ -365,12 +371,14 @@ export default function InvoicePreview({
             {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-[#d4af37]/40 pb-4">
               <div className="flex gap-4">
-                <img 
-                  src={company.logoUrl} 
-                  alt="Company Logo" 
-                  className="w-20 h-20 object-contain rounded-md"
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
+                {company.logoUrl && (
+                  <img 
+                    src={company.logoUrl} 
+                    alt="Company Logo" 
+                    className="w-20 h-20 object-contain rounded-md"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
                 <div className="space-y-0.5 max-w-xl">
                   <h1 className="text-2xl font-extrabold text-slate-950 tracking-tight leading-none font-serif-invoice uppercase">
                     {company.name}
@@ -416,7 +424,7 @@ export default function InvoicePreview({
                 <h3 className="text-[10px] font-bold uppercase tracking-wider text-[#b48d2d] border-b border-slate-100 pb-0.5">
                   Bill To
                 </h3>
-                <div className="text-[10.5px] space-y-0.5 text-slate-600">
+                <div className="text-[10.5px] space-y-0.5 text-slate-650">
                   <h4 className="font-black text-slate-900 text-[11px] leading-tight">{custDetails.name}</h4>
                   <p className="whitespace-pre-line text-[9px] leading-normal">{custDetails.address}</p>
                   {custDetails.phone && <p><span className="text-slate-400">Mobile:</span> {custDetails.phone}</p>}
@@ -430,7 +438,7 @@ export default function InvoicePreview({
                 <h3 className="text-[10px] font-bold uppercase tracking-wider text-[#b48d2d] border-b border-slate-100 pb-0.5">
                   Ship To
                 </h3>
-                <div className="text-[10.5px] space-y-0.5 text-slate-600">
+                <div className="text-[10.5px] space-y-0.5 text-slate-655">
                   <h4 className="font-black text-slate-900 text-[11px] leading-tight">{shipDetails.name || custDetails.name}</h4>
                   <p className="whitespace-pre-line text-[9px] leading-normal">{shipDetails.address || custDetails.address}</p>
                   <p><span className="text-slate-400">Destination State:</span> {shipDetails.placeOfSupply || custDetails.placeOfSupply}</p>
@@ -442,14 +450,14 @@ export default function InvoicePreview({
             <div className="border border-slate-200 rounded-sm overflow-hidden">
               <table className="w-full text-left border-collapse text-[10.5px]">
                 <thead>
-                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-600 font-bold">
-                    <th className="px-3 py-2 w-8 text-center border-r border-slate-200">No</th>
-                    <th className="px-3 py-2 border-r border-slate-200">Items</th>
-                    <th className="px-3 py-2 w-20 text-center border-r border-slate-200">HSN/SAC</th>
-                    <th className="px-3 py-2 w-16 text-center border-r border-slate-200">Qty</th>
-                    <th className="px-3 py-2 w-24 text-right border-r border-slate-200 font-mono">Rate</th>
-                    <th className="px-3 py-2 w-24 text-center border-r border-slate-200">Tax</th>
-                    <th className="px-3 py-2 w-28 text-right font-mono">Total</th>
+                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-605 font-bold">
+                    <th className="px-3 py-2 w-8 text-center border-r border-slate-200 font-bold">No</th>
+                    <th className="px-3 py-2 border-r border-slate-200 font-bold">Items</th>
+                    <th className="px-3 py-2 w-20 text-center border-r border-slate-200 font-bold">HSN/SAC</th>
+                    <th className="px-3 py-2 w-16 text-center border-r border-slate-200 font-bold">Qty</th>
+                    <th className="px-3 py-2 w-24 text-right border-r border-slate-200 font-mono font-bold">Rate</th>
+                    <th className="px-3 py-2 w-24 text-center border-r border-slate-200 font-bold">Tax</th>
+                    <th className="px-3 py-2 w-28 text-right font-mono font-bold">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-slate-700">
@@ -490,12 +498,12 @@ export default function InvoicePreview({
             <div className="grid grid-cols-2 gap-6 items-start pt-1">
               <div className="space-y-3">
                 <div className="text-[9.5px] text-slate-500 leading-relaxed bg-white p-3.5 rounded-sm border border-slate-200">
-                  <h4 className="font-bold text-slate-850 uppercase tracking-wider mb-0.5">Terms & Conditions</h4>
+                  <h4 className="font-bold text-slate-800 uppercase tracking-wider mb-0.5">Terms & Conditions</h4>
                   <p className="whitespace-pre-line leading-normal">{invoice.terms}</p>
                 </div>
-                <div className="text-[9.5px] text-slate-500 leading-relaxed bg-white p-3.5 rounded-sm border border-slate-200">
-                  <h4 className="font-bold text-slate-850 uppercase tracking-wider mb-0.5">Settlement Bank details</h4>
-                  <p className="leading-tight text-slate-650">
+                <div className="text-[9.5px] text-slate-505 leading-relaxed bg-white p-3.5 rounded-sm border border-slate-200">
+                  <h4 className="font-bold text-slate-800 uppercase tracking-wider mb-0.5">Settlement Bank details</h4>
+                  <p className="leading-tight text-slate-655">
                     Account: <span className="font-semibold text-slate-800 font-mono">{company.bankAccountNo}</span><br />
                     Bank Name: <span className="font-semibold text-slate-800">{company.bankName}</span><br />
                     IFSC Code: <span className="font-semibold text-slate-800 font-mono">{company.bankIfsc}</span>
@@ -515,7 +523,7 @@ export default function InvoicePreview({
                       <div>
                         <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">UPI Settlement Address</span>
                         <span className="font-mono font-bold text-slate-800 text-[9.5px] leading-tight block">{company.upiId || "—"}</span>
-                        <span className="block text-[7px] text-slate-500 mt-1 leading-none">Scan code with any UPI app to settle payment</span>
+                        <span className="block text-[7px] text-slate-550 mt-1 leading-none">Scan code with any UPI app to settle payment</span>
                       </div>
                     </div>
                   )}
@@ -572,7 +580,7 @@ export default function InvoicePreview({
 
           {/* Signatures */}
           <div className="flex justify-between items-end">
-            <div className="flex items-center gap-2.5 text-emerald-700/80 px-3 py-1.5 border border-emerald-100 bg-emerald-50/20 rounded-md">
+            <div className="flex items-center gap-2.5 text-emerald-800/80 px-3 py-1.5 border border-emerald-100 bg-emerald-50/20 rounded-md">
               <ShieldCheck size={16} />
               <span className="text-[9px] font-bold uppercase tracking-wider">Digitally Verified GST Invoice</span>
             </div>
@@ -598,6 +606,6 @@ export default function InvoicePreview({
 
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

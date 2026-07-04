@@ -1,0 +1,4 @@
+id,name,unit_price,gst_rate,hsn_sac
+"prod-1","Day cream 50gms",200,18,"33049910"
+"prod-2","Face cream 30gm",450,18,"33049910"
+"prod-3","Hair oil 100ml",250,18,"33059011"

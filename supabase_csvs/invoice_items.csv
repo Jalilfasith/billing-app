@@ -1,0 +1,4 @@
+id,invoice_id,product_name,hsn_sac,qty,rate,gst_rate
+"item-1","inv-1","Day cream 50gms","33049910",25,200,18
+"item-2","inv-1","Face cream 30gm","33049910",50,450,18
+"item-3","inv-1","Hair oil 100ml","33059011",30,250,18

@@ -16,10 +16,10 @@ export function getStateFromGstin(gstin) {
   return stateCodes[code] || "";
 }
 
-export function calculateInvoice(invoice, company) {
+export function calculateInvoice(invoice, _company) {
   if (!invoice) return null;
 
-  const companyState = getStateFromGstin(company?.gstin) || "Tamil Nadu";
+
   
   let totalQty = 0;
   let totalTaxable = 0;
@@ -28,7 +28,8 @@ export function calculateInvoice(invoice, company) {
   const itemsDetailed = (invoice.items || []).map(item => {
     const qty = Number(item.qty) || 0;
     const rate = Number(item.rate) || 0;
-    const gstRate = Number(item.gstRate) !== undefined ? Number(item.gstRate) : 18;
+    const parsedGst = Number(item.gstRate);
+    const gstRate = isNaN(parsedGst) ? 18 : parsedGst;
     
     const taxableAmount = qty * rate;
     const taxAmount = taxableAmount * (gstRate / 100);

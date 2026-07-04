@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Save, Building, Phone, Mail, Globe, MapPin, Landmark } from "lucide-react";
+import { Save, Building, Landmark } from "lucide-react";
+import { motion } from "framer-motion";
+import * as api from "../lib/api";
 
 export default function CompanyDetails({ company, setCompany, setView }) {
   const [formData, setFormData] = useState({ ...company });
@@ -20,18 +22,35 @@ export default function CompanyDetails({ company, setCompany, setView }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setCompany(formData);
-    alert("Company details saved successfully!");
-    setView("dashboard");
+    setIsSaving(true);
+    try {
+      await api.saveCompany(formData);
+      setCompany(formData);
+      alert("Company details saved successfully to database!");
+      setView("dashboard");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save to database. Will use local cache.");
+      setCompany(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6 max-w-4xl mx-auto pb-12 relative z-10"
+    >
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Company & GST Registration Profile</h2>
-        <p className="text-slate-500 text-sm mt-0.5">Edit billing address details, bank information, and defaults.</p>
+        <h2 className="text-2xl font-extrabold text-white font-heading">Company & GST Registration Profile</h2>
+        <p className="text-slate-400 text-sm mt-0.5">Edit billing address details, bank information, and defaults.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -39,14 +58,14 @@ export default function CompanyDetails({ company, setCompany, setView }) {
           {/* Form fields */}
           <div className="lg:col-span-2 space-y-6">
             {/* General Info */}
-            <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-800/50">
-                <Building size={18} className="text-amber-500" /> Business Details
+            <div className="card-glass p-6 space-y-4 bg-slate-950/20">
+              <h3 className="font-extrabold text-white flex items-center gap-2 pb-2 border-b border-white/5 text-base">
+                <Building size={18} className="text-brand-secondary" /> Business Details
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Trade Name
                   </label>
                   <input
@@ -54,13 +73,13 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition font-semibold"
+                    className="input-premium font-semibold"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Legal Name (Proprietor)
                   </label>
                   <input
@@ -68,12 +87,12 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="legalName"
                     value={formData.legalName}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Subtitle / Description
                   </label>
                   <input
@@ -81,12 +100,12 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="subtitle"
                     value={formData.subtitle}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     GSTIN
                   </label>
                   <input
@@ -94,13 +113,13 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="gstin"
                     value={formData.gstin}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition font-mono font-bold"
+                    className="input-premium font-mono font-bold"
                     required
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Principal Place of Business (Billing Address)
                   </label>
                   <textarea
@@ -108,13 +127,13 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition resize-none leading-relaxed"
+                    className="input-premium resize-none leading-relaxed"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Phone Contact
                   </label>
                   <input
@@ -122,12 +141,12 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Email Address
                   </label>
                   <input
@@ -135,21 +154,21 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
               </div>
             </div>
 
             {/* Bank details & Defaults */}
-            <div className="bg-slate-950/45 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-800/50">
-                <Landmark size={18} className="text-amber-500" /> Bank & Signature Details
+            <div className="card-glass p-6 space-y-4 bg-slate-950/20">
+              <h3 className="font-extrabold text-white flex items-center gap-2 pb-2 border-b border-white/5 text-base">
+                <Landmark size={18} className="text-brand-secondary" /> Bank & Signature Details
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Bank Name
                   </label>
                   <input
@@ -157,11 +176,11 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="bankName"
                     value={formData.bankName}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Bank Account Number
                   </label>
                   <input
@@ -169,11 +188,11 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="bankAccountNo"
                     value={formData.bankAccountNo}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Bank Branch
                   </label>
                   <input
@@ -181,11 +200,11 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="bankBranch"
                     value={formData.bankBranch}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     IFSC Code
                   </label>
                   <input
@@ -193,11 +212,11 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="bankIfsc"
                     value={formData.bankIfsc}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition font-mono"
+                    className="input-premium font-mono"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Authorized Signatory Subtitle
                   </label>
                   <input
@@ -205,11 +224,11 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="signatureText"
                     value={formData.signatureText}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                    className="input-premium"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     UPI Address / ID
                   </label>
                   <input
@@ -217,19 +236,19 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                     name="upiId"
                     value={formData.upiId || ""}
                     onChange={handleChange}
-                    className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition font-mono"
+                    className="input-premium font-mono"
                     placeholder="e.g. jamilgroups@sbi"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  <label className="label-premium">
                     Settlement QR Code
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="w-full bg-slate-950/40 border border-slate-850 rounded-lg px-3 py-1.5 text-xs outline-none transition"
+                    className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-3.5 py-2 text-xs outline-none transition cursor-pointer"
                   />
                 </div>
               </div>
@@ -238,24 +257,24 @@ export default function CompanyDetails({ company, setCompany, setView }) {
 
           {/* Right Preview Side */}
           <div className="space-y-6">
-            <div className="bg-slate-950/65 text-white p-6 rounded-2xl border border-cyan-800/50 shadow-2xl backdrop-blur-xl">
-              <h4 className="font-bold text-amber-400 mb-3 text-sm uppercase tracking-wider">Active Profile Summary</h4>
+            <div className="card-glass p-6 shadow-2xl bg-slate-950/20 border border-brand-primary/20">
+              <h4 className="font-extrabold text-brand-secondary mb-4 text-sm uppercase tracking-wider">Active Profile Summary</h4>
               <div className="space-y-3.5 text-xs text-slate-300">
                 <div>
-                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px]">Company Name</span>
-                  <span className="text-white text-sm font-bold">{formData.name}</span>
+                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[9px]">Company Name</span>
+                  <span className="text-white text-sm font-extrabold">{formData.name || "—"}</span>
                 </div>
                 <div>
-                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px]">Seller GSTIN</span>
-                  <span className="text-emerald-400 font-bold font-mono text-sm">{formData.gstin}</span>
+                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[9px]">Seller GSTIN</span>
+                  <span className="text-brand-secondary font-bold font-mono text-sm">{formData.gstin || "—"}</span>
                 </div>
                 <div>
-                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px]">Seller State</span>
+                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[9px]">Seller State</span>
                   <span>Tamil Nadu (State Code: 33)</span>
                 </div>
-                <div className="border-t border-slate-800 pt-3">
-                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-2">Settlement QR Check</span>
-                  <div className="bg-white/5 border border-white/10 rounded p-2 flex items-center justify-center h-16 mb-3">
+                <div className="border-t border-white/5 pt-3">
+                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-2">Settlement QR Check</span>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-center h-16 mb-3">
                     {formData.qrCodeUrl ? (
                       <img 
                         src={formData.qrCodeUrl} 
@@ -264,22 +283,22 @@ export default function CompanyDetails({ company, setCompany, setView }) {
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     ) : (
-                      <span className="text-slate-500 text-[10px]">No QR Code</span>
+                      <span className="text-slate-550 text-[10px]">No QR Code</span>
                     )}
                   </div>
                 </div>
-                <div className="border-t border-slate-800 pt-3">
-                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-2">Signature Asset Check</span>
-                  <div className="bg-white/5 border border-white/10 rounded p-2 flex items-center justify-center h-16">
+                <div className="border-t border-white/5 pt-3">
+                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-2">Signature Asset Check</span>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-center h-16">
                     {formData.signatureUrl ? (
                       <img 
                         src={formData.signatureUrl} 
                         alt="Signature Preview" 
-                        className="max-h-12 w-auto object-contain invert brightness-200"
+                        className="max-h-12 w-auto object-contain invert opacity-70"
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     ) : (
-                      <span className="text-slate-500 text-[10px]">No signature</span>
+                      <span className="text-slate-550 text-[10px]">No signature</span>
                     )}
                   </div>
                 </div>
@@ -288,13 +307,15 @@ export default function CompanyDetails({ company, setCompany, setView }) {
             
             <button
               type="submit"
-              className="w-full bg-slate-900 hover:bg-slate-850 text-white hover:text-amber-400 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition"
+              disabled={isSaving}
+              className="w-full btn-premium-gradient py-3 text-xs uppercase font-extrabold tracking-wider mt-4 flex items-center justify-center gap-2"
             >
-              <Save size={18} /> Save Settings & Apply
+              <Save size={16} />
+              {isSaving ? "Saving..." : "Save Configuration"}
             </button>
           </div>
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 }

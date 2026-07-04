@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Plus, Edit2, Trash2, Search, User, MapPin, Save, X } from "lucide-react";
-
-export default function CustomerDetails({ customers, setCustomers, setView }) {
+import { Edit2, Trash2, Search, User, MapPin, Save, X } from "lucide-react";
+import { motion } from "framer-motion";
+import * as api from "../lib/api";
+export default function CustomerDetails({ customers, setCustomers, _setView }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -43,33 +44,51 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
     setPlaceOfSupply("Tamil Nadu");
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this customer?")) {
-      setCustomers(customers.filter(c => c.id !== id));
+      try {
+        await api.deleteCustomer(id);
+        setCustomers(customers.filter(c => c.id !== id));
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete from database. Will remove locally.");
+        setCustomers(customers.filter(c => c.id !== id));
+      }
     }
   };
 
-  const handleSave = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    if (editingId) {
-      // Edit
-      setCustomers(customers.map(c => c.id === editingId ? {
-        ...c, name, address, shippingAddress, phone, gstin, pan, placeOfSupply
-      } : c));
-      setEditingId(null);
-    } else {
-      // Add
-      const newCust = {
-        id: `cust-${Date.now()}`,
-        name, address, shippingAddress, phone, gstin, pan, placeOfSupply
-      };
-      setCustomers([...customers, newCust]);
-      setIsAdding(false);
+    setIsSaving(true);
+    try {
+      if (editingId) {
+        // Edit
+        const updatedCust = { id: editingId, name, address, shippingAddress, phone, gstin, pan, placeOfSupply };
+        await api.updateCustomer(updatedCust);
+        setCustomers(customers.map(c => c.id === editingId ? updatedCust : c));
+        setEditingId(null);
+      } else {
+        // Add
+        const newCust = {
+          id: `cust-${Date.now()}`,
+          name, address, shippingAddress, phone, gstin, pan, placeOfSupply
+        };
+        await api.addCustomer(newCust);
+        setCustomers([newCust, ...customers]);
+        setIsAdding(false);
+      }
+      clearForm();
+      alert("Customer details saved!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save to database. Check console.");
+    } finally {
+      setIsSaving(false);
     }
-    clearForm();
-    alert("Customer details saved!");
   };
 
   const filteredCustomers = customers.filter(c => 
@@ -78,17 +97,22 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
   );
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6 relative z-10"
+    >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Customers Catalog</h2>
-          <p className="text-slate-500 text-sm mt-0.5">Manage registered clients, default billing and shipping addresses.</p>
+          <h2 className="text-2xl font-extrabold text-white font-heading">Customers Catalog</h2>
+          <p className="text-slate-400 text-sm mt-0.5">Manage registered clients, default billing and shipping addresses.</p>
         </div>
         {!isAdding && !editingId && (
           <button
             onClick={() => { setIsAdding(true); clearForm(); }}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition"
+            className="btn-premium-gradient font-bold px-5 py-2.5 rounded-xl text-xs transition cursor-pointer shadow-lg shadow-brand-primary/10"
           >
             + Register New Client
           </button>
@@ -97,19 +121,19 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
 
       {/* Editor Panel (Add / Edit) */}
       {(isAdding || editingId) && (
-        <div className="bg-white p-6 rounded-xl border border-slate-850 shadow-md space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800/50 pb-3">
-            <h3 className="font-bold text-slate-900">
+        <div className="card-glass p-6 space-y-4 bg-slate-950/20">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <h3 className="font-extrabold text-white text-base">
               {editingId ? "Edit Customer Registry" : "Register New Business Client"}
             </h3>
-            <button onClick={cancelEdit} className="text-slate-500 hover:text-slate-300">
+            <button onClick={cancelEdit} className="text-slate-400 hover:text-white transition cursor-pointer">
               <X size={18} />
             </button>
           </div>
 
           <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 Client / Business Name
               </label>
               <input
@@ -117,13 +141,13 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="e.g. JEHIS ONLINE MARKETING"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                className="input-premium font-semibold"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 GSTIN
               </label>
               <input
@@ -131,12 +155,12 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="33XXXXXXXXXXXXX"
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition font-mono"
+                className="input-premium font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 PAN Number
               </label>
               <input
@@ -144,12 +168,12 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="ABCDE1234F"
                 value={pan}
                 onChange={(e) => setPan(e.target.value.toUpperCase())}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition font-mono"
+                className="input-premium font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 Mobile / Phone
               </label>
               <input
@@ -157,12 +181,12 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="9442551622"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                className="input-premium"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 Place of Supply (State)
               </label>
               <input
@@ -170,12 +194,12 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="Tamil Nadu"
                 value={placeOfSupply}
                 onChange={(e) => setPlaceOfSupply(e.target.value)}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition"
+                className="input-premium"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 Billing Address
               </label>
               <textarea
@@ -183,13 +207,13 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="Street address, City, PIN"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition resize-none"
+                className="input-premium resize-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="label-premium">
                 Shipping Address
               </label>
               <textarea
@@ -197,23 +221,25 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 placeholder="Shipping destination (Leave empty if same as billing)"
                 value={shippingAddress}
                 onChange={(e) => setShippingAddress(e.target.value)}
-                className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg px-3 py-2 text-sm outline-none transition resize-none"
+                className="input-premium resize-none"
               />
             </div>
 
-            <div className="md:col-span-2 flex items-center justify-end gap-2 pt-2 border-t border-slate-800/50">
+            <div className="md:col-span-2 flex items-center justify-end gap-2 pt-3 border-t border-white/5">
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="px-4 py-2 rounded-lg border border-slate-850 text-slate-300 hover:bg-slate-950/40 text-xs font-semibold"
+                className="btn-cyber-outline px-4 py-2 text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
-              <button
+              <button 
                 type="submit"
-                className="bg-slate-900 text-white hover:text-amber-400 font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 transition"
+                disabled={isSaving}
+                className="w-full btn-premium-gradient py-3 text-xs uppercase font-extrabold tracking-wider mt-2 flex items-center justify-center gap-2"
               >
-                <Save size={14} /> Save Customer
+                <Save size={16} />
+                {isSaving ? "Saving..." : (editingId ? "Update Customer" : "Save New Customer")}
               </button>
             </div>
           </form>
@@ -221,8 +247,8 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
       )}
 
       {/* Search and Customer List Card */}
-      <div className="bg-white rounded-xl border border-slate-850 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-850 flex items-center justify-between">
+      <div className="card-glass overflow-hidden bg-slate-950/20">
+        <div className="p-4 border-b border-white/5 flex items-center justify-between bg-slate-950/35">
           <div className="relative w-80">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
@@ -230,33 +256,33 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950/40 focus:bg-white border border-slate-850 focus:border-amber-500 rounded-lg pl-9 pr-3 py-1.5 text-xs outline-none transition"
+              className="input-premium pl-9 py-2 text-xs"
             />
           </div>
-          <span className="text-xs text-slate-500">Registered: {filteredCustomers.length}</span>
+          <span className="text-xs text-slate-450 font-bold">Registered: {filteredCustomers.length}</span>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-white/5">
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map(cust => (
-              <div key={cust.id} className="p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 hover:bg-slate-950/40/30 transition">
-                <div className="flex items-start gap-3">
-                  <div className="bg-amber-100 text-amber-800 p-2.5 rounded-xl shrink-0">
+              <div key={cust.id} className="p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 hover:bg-white/2 transition">
+                <div className="flex items-start gap-3.5">
+                  <div className="bg-brand-primary/10 text-brand-secondary p-3 rounded-xl shrink-0 border border-brand-primary/20">
                     <User size={20} />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="font-bold text-slate-900 text-base">{cust.name}</h4>
+                    <h4 className="font-extrabold text-white text-base leading-tight">{cust.name}</h4>
                     {cust.gstin && (
-                      <p className="text-xs text-slate-700 font-semibold font-mono">
-                        GSTIN: {cust.gstin} &nbsp;|&nbsp; PAN: {cust.pan || "N/A"}
+                      <p className="text-xs text-slate-300 font-semibold font-mono">
+                        GSTIN: <span className="text-brand-secondary">{cust.gstin}</span> &nbsp;|&nbsp; PAN: <span className="text-brand-accent">{cust.pan || "N/A"}</span>
                       </p>
                     )}
-                    <p className="text-xs text-slate-500 flex items-start gap-1">
-                      <MapPin size={12} className="shrink-0 mt-0.5" />
+                    <p className="text-xs text-slate-400 flex items-start gap-1 leading-relaxed">
+                      <MapPin size={12} className="shrink-0 mt-0.5 text-slate-500" />
                       <span>{cust.address}</span>
                     </p>
                     {cust.shippingAddress && cust.shippingAddress !== cust.address && (
-                      <p className="text-[11px] text-slate-500 italic">
+                      <p className="text-[11px] text-slate-450 italic leading-none">
                         Ships to: {cust.shippingAddress}
                       </p>
                     )}
@@ -266,14 +292,14 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
                 <div className="flex items-center gap-2 self-end sm:self-start">
                   <button
                     onClick={() => startEdit(cust)}
-                    className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition cursor-pointer"
                     title="Edit Customer"
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(cust.id)}
-                    className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    className="p-2 text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 rounded-xl transition cursor-pointer"
                     title="Delete Customer"
                   >
                     <Trash2 size={16} />
@@ -288,6 +314,6 @@ export default function CustomerDetails({ customers, setCustomers, setView }) {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
