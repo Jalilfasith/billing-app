@@ -343,7 +343,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex antialiased font-sans relative overflow-hidden select-none select-text bg-[#0B0F19] text-slate-200 dark-theme">
+    <div className="min-h-screen flex antialiased font-sans relative bg-[#0B0F19] text-slate-200 dark-theme">
       
       {/* Background glowing blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -351,16 +351,25 @@ export default function App() {
         <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-brand-secondary/80 rounded-full blur-[160px] opacity-10" />
       </div>
 
-      {/* Sticky Scroll Progress bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-primary via-brand-accent to-brand-secondary z-50 transition-all duration-100" style={{ width: `${scrollProgress}%` }}></div>
+      {/* Scroll Progress bar */}
+      <div className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand-primary via-brand-accent to-brand-secondary z-50 transition-all duration-100" style={{ width: `${scrollProgress}%` }} />
 
-      {/* Sidebar: Navigation Panel */}
-      <aside 
-        className={`fixed top-4 bottom-4 left-4 z-40 w-64 bg-slate-950/45 backdrop-blur-xl border border-white/10 rounded-3xl flex flex-col transition-all duration-300 no-print shadow-2xl
+      {/* ── Mobile Sidebar Overlay Backdrop ── */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar: Navigation Panel ── */}
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-40 w-72 bg-slate-950/95 backdrop-blur-xl border-r border-white/8 flex flex-col transition-transform duration-300 no-print shadow-2xl
+          lg:top-4 lg:bottom-4 lg:left-4 lg:rounded-3xl lg:border lg:border-white/10 lg:w-64
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         {/* Sidebar Header Brand */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-white/2 rounded-t-3xl">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-white/5 rounded-t-3xl shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="bg-gradient-to-br from-brand-primary via-brand-accent to-brand-secondary text-white font-extrabold p-2 rounded-xl text-xs tracking-wider flex items-center justify-center w-8 h-8 shadow-md">
               JG
@@ -370,16 +379,16 @@ export default function App() {
               <span className="text-[9px] text-brand-secondary font-bold tracking-widest uppercase mt-0.5 block">BILLING PORTAL</span>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-md"
+            className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-md hover:bg-white/5 transition"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1.5 relative">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1 relative">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = view === item.view;
@@ -388,17 +397,14 @@ export default function App() {
                 key={item.view}
                 onClick={() => {
                   setView(item.view);
-                  // Auto-collapse sidebar on mobile
-                  if (window.innerWidth < 1024) {
-                    setIsSidebarOpen(false);
-                  }
+                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 border border-transparent group relative"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all duration-300 border border-transparent group relative"
               >
                 {isActive && (
-                  <motion.div 
-                    layoutId="sidebarActivePill" 
-                    className="absolute inset-0 bg-gradient-to-r from-brand-primary/15 to-brand-secondary/10 border border-brand-primary/25 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.1)]" 
+                  <motion.div
+                    layoutId="sidebarActivePill"
+                    className="absolute inset-0 bg-gradient-to-r from-brand-primary/15 to-brand-secondary/10 border border-brand-primary/25 rounded-xl"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -412,12 +418,12 @@ export default function App() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-white/5 bg-slate-950/20 rounded-b-3xl text-[10px] text-slate-500 flex flex-col gap-2">
-          <p className="font-bold text-slate-300">{company?.name || ""}</p>
+        <div className="p-4 border-t border-white/5 bg-slate-950/20 rounded-b-3xl text-[10px] text-slate-500 flex flex-col gap-2 shrink-0">
+          <p className="font-bold text-slate-300 truncate">{company?.name || ""}</p>
           <p className="truncate font-medium">GSTIN: {company?.gstin || ""}</p>
           <button
             onClick={handleLogout}
-            className="mt-1 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-450 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-300 text-[10px] font-bold uppercase tracking-wider"
+            className="mt-1 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-300 text-[10px] font-bold uppercase tracking-wider"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
@@ -425,11 +431,13 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Workspace Frame */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 relative z-10 ${isSidebarOpen ? "lg:pl-72 lg:pr-4 lg:py-4" : "lg:px-4 lg:py-4"}`}>
-        
-        {/* Header (Top-bar) */}
-        <header className="h-16 bg-[#0B0F19]/45 backdrop-blur-xl border border-white/5 lg:rounded-2xl px-6 flex items-center justify-between sticky top-4 z-30 no-print shadow-lg">
+      {/* ── Main Workspace Frame ── */}
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 relative z-10
+        pb-20 lg:pb-0
+        ${isSidebarOpen ? "lg:pl-72" : ""} lg:pl-72 lg:pr-4 lg:py-4`}
+      >
+        {/* Top Header */}
+        <header className="h-14 lg:h-16 bg-[#0B0F19]/80 backdrop-blur-xl border-b border-white/5 lg:border lg:rounded-2xl px-4 lg:px-6 flex items-center justify-between sticky top-0 z-30 no-print shadow-lg shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -437,43 +445,80 @@ export default function App() {
             >
               <Menu size={20} />
             </button>
-            <div className="h-4 w-px bg-white/10"></div>
-            <div>
-              <h2 className="text-sm font-black text-white uppercase tracking-wider">{getCurrentTitle()}</h2>
-            </div>
+            <div className="h-4 w-px bg-white/10" />
+            <h2 className="text-sm font-black text-white uppercase tracking-wider">{getCurrentTitle()}</h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-bold text-slate-200">{company?.name || ""}</span>
+              <span className="text-xs font-bold text-slate-200 truncate max-w-[140px]">{company?.name || ""}</span>
               <span className="text-[9px] text-brand-secondary font-extrabold flex items-center gap-1 justify-end uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-secondary inline-block animate-ping"></span>
-                GST: {company?.gstin || ""}
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-secondary inline-block animate-ping" />
+                GST: {company?.gstin?.slice(0, 10) || ""}
               </span>
             </div>
-            
-            <div className="h-8 w-8 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-secondary flex items-center justify-center font-black text-xs shadow-md">
+            <div className="h-8 w-8 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-secondary flex items-center justify-center font-black text-xs shadow-md shrink-0">
               JG
             </div>
           </div>
         </header>
 
         {/* Content View Container */}
-        <main className="flex-1 pt-6 max-w-7xl w-full mx-auto print:p-0 print:max-w-none">
+        <main className="flex-1 p-3 sm:p-4 lg:pt-6 lg:px-0 max-w-7xl w-full mx-auto print:p-0 print:max-w-none overflow-x-hidden">
           {renderView()}
         </main>
       </div>
+
+      {/* ── Mobile Bottom Navigation Bar ── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-white/8 no-print">
+        <div className="flex items-center justify-around px-1 py-2">
+          {[
+            { name: "Home",     view: "dashboard",       icon: LayoutDashboard },
+            { name: "Invoice",  view: "create-invoice",  icon: FilePlus },
+            { name: "History",  view: "history",         icon: History },
+            { name: "Clients",  view: "customers",       icon: Users },
+            { name: "More",     view: null,              icon: Menu },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = item.view && view === item.view;
+            return (
+              <button
+                key={item.name}
+                onClick={() => {
+                  if (item.view) {
+                    setView(item.view);
+                  } else {
+                    setIsSidebarOpen(true);
+                  }
+                }}
+                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200"
+              >
+                <Icon
+                  size={20}
+                  className={isActive ? "text-brand-secondary" : "text-slate-500"}
+                />
+                <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                  isActive ? "text-brand-secondary" : "text-slate-500"
+                }`}>
+                  {item.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Floating Back to Top Button */}
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-slate-950/70 border border-white/10 text-brand-secondary hover:text-white hover:scale-105 shadow-xl transition cursor-pointer flex items-center justify-center"
+          className="fixed bottom-24 lg:bottom-6 right-4 lg:right-6 z-40 p-3 rounded-full bg-slate-950/70 border border-white/10 text-brand-secondary hover:text-white hover:scale-105 shadow-xl transition cursor-pointer flex items-center justify-center"
         >
           <ArrowUp size={16} />
         </button>
       )}
-
     </div>
   );
 }
+
+
